@@ -51,29 +51,31 @@ export class RecipeDetailsComponent implements OnInit {
   isLoading = true;
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe({
-      next: (params) => {
-        const id = params.get('id');
+    const id = this.route.snapshot.paramMap.get('id');
 
-        if (!id) {
-          this.recipe = undefined;
-          this.isLoading = false;
-          return;
-        }
+    if (!id) {
+      this.isLoading = false;
+      return;
+    }
 
-        this.isLoading = true;
+    const stored = localStorage.getItem('selectedRecipe');
+    if (stored) {
+      const parsed: Recipe = JSON.parse(stored);
+      if (parsed.id === id) {
+        this.recipe = parsed;
+        this.isLoading = false;
+        return;
+      }
+    }
 
-        this.recipeService.getRecipe(id).subscribe({
-          next: (recipe: Recipe) => {
-            this.recipe = recipe;
-            this.isLoading = false;
-          },
-          error: (err: unknown) => {
-            console.error('Hiba a recept betöltésekor:', err);
-            this.recipe = undefined;
-            this.isLoading = false;
-          }
-        });
+    this.recipeService.getRecipe(id).subscribe({
+      next: (recipe: Recipe) => {
+        this.recipe = recipe;
+        this.isLoading = false;
+      },
+      error: (err: unknown) => {
+        console.error('Hiba a recept betöltésekor:', err);
+        this.isLoading = false;
       }
     });
   }

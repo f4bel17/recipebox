@@ -28,9 +28,17 @@ import { Recipe } from '../../models/recipe.model';
       </p>
 
       <div class="button-row">
-        <a class="button-link primary" [href]="'/recipes/' + recipe.id">Részletek</a>
-        <a class="button-link secondary" [href]="'/recipes/' + recipe.id + '/edit'">Szerkesztés</a>
-        <button class="warn" type="button" (click)="deleteRecipe(recipe.id)">Törlés</button>
+        <button class="button-link primary" type="button" (click)="openDetails(recipe)">
+          Részletek
+        </button>
+
+        <button class="button-link secondary" type="button" (click)="openEdit(recipe)">
+          Szerkesztés
+        </button>
+
+        <button class="warn" type="button" (click)="deleteRecipe(recipe.id)">
+          Törlés
+        </button>
       </div>
     </div>
 
@@ -69,10 +77,18 @@ export class RecipeListComponent implements OnInit {
         this.pageSize = result.pageSize;
         this.totalCount = result.totalCount;
       },
-      error: (err: unknown) => {
-        console.error('Hiba a receptek betöltésekor:', err);
-      }
+      error: (err: unknown) => console.error('Hiba a receptek betöltésekor:', err)
     });
+  }
+
+  openDetails(recipe: Recipe): void {
+    localStorage.setItem('selectedRecipe', JSON.stringify(recipe));
+    window.location.href = `/recipes/${recipe.id}`;
+  }
+
+  openEdit(recipe: Recipe): void {
+    localStorage.setItem('selectedRecipe', JSON.stringify(recipe));
+    window.location.href = `/recipes/${recipe.id}/edit`;
   }
 
   nextPage(): void {
