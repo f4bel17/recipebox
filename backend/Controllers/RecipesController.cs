@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using RecipeBox.Api.Dtos;
-using RecipeBox.Api.Services;
+using MongoDB.Driver;
+using RecipeBox.Api.Models;
 
 namespace RecipeBox.Api.Controllers;
 
@@ -8,55 +8,88 @@ namespace RecipeBox.Api.Controllers;
 [Route("api/[controller]")]
 public class RecipesController : ControllerBase
 {
-    private readonly RecipeService _recipeService;
+    private readonly IMongoCollection<Recipe> _recipesCollection;
 
-    public RecipesController(RecipeService recipeService)
+    public RecipesController(IMongoDatabase database)
     {
-        _recipeService = recipeService;
+        _recipesCollection = database.GetCollection<Recipe>("recipes");
     }
 
+    // GET: api/recipes?page=1&pageSize=10
     [HttpGet]
-    public async Task<ActionResult<PagedResultDto<object>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<ActionResult<object>> GetAll(int page = 1, int pageSize = 10)
     {
-        var result = await _recipeService.GetPagedAsync(page, pageSize);
-        return Ok(result);
+        var totalCount = await _recipesCollection.CountDocumentsAsync(_ => true);
+
+        var items = await _recipesCollection
+            .Find(_ => true)
+            .Skip((page - 1) * pageSize)
+            .Limit(pageSize)
+            .ToListAsync();
+
+        return Ok(new
+        {
+            items,
+            page,
+            pageSize,
+            totalCount
+        });
     }
 
-    [HttpGet("{id:length(24)}")]
-    public async Task<IActionResult> GetById(string id)
+    // GET: api/recipes/{id}
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Recipe>> GetById(string id)
     {
-        var recipe = await _recipeService.GetByIdAsync(id);
-        return recipe is null ? NotFound() : Ok(recipe);
+        var recipe = await _recipesCollection
+            .Find(r => r.Id == id)
+            .FirstOrDefaultAsync();
+
+        if (recipe == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(recipe);
     }
 
+    // POST: api/recipes
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateRecipeDto dto)
+    public async Task<ActionResult<Recipe>> Create(Recipe recipe)
     {
-        if (!ModelState.IsValid)
-        {
-            return ValidationProblem(ModelState);
-        }
+        await _recipesCollection.InsertOneAsync(recipe);
 
-        var created = await _recipeService.CreateAsync(dto);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        return CreatedAtAction(nameof(GetById), new { id = recipe.Id }, recipe);
     }
 
-    [HttpPut("{id:length(24)}")]
-    public async Task<IActionResult> Update(string id, [FromBody] UpdateRecipeDto dto)
+    // PUT: api/recipes/{id}
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(string id, Recipe updatedRecipe)
     {
-        if (!ModelState.IsValid)
+        updatedRecipe.Id = id;
+
+        var result = await _recipesCollection
+            .ReplaceOneAsync(r => r.Id == id, updatedRecipe);
+
+        if (result.MatchedCount == 0)
         {
-            return ValidationProblem(ModelState);
+            return NotFound();
         }
 
-        var updated = await _recipeService.UpdateAsync(id, dto);
-        return updated ? NoContent() : NotFound();
+        return NoContent();
     }
 
-    [HttpDelete("{id:length(24)}")]
+    // DELETE: api/recipes/{id}
+    [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        var deleted = await _recipeService.DeleteAsync(id);
-        return deleted ? NoContent() : NotFound();
+        var result = await _recipesCollection
+            .DeleteOneAsync(r => r.Id == id);
+
+        if (result.DeletedCount == 0)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
     }
 }
