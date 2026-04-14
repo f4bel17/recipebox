@@ -1,0 +1,55 @@
+@host = http://localhost:8080
+
+### Get recipes
+GET {{host}}/api/recipes?page=1&pageSize=10
+Accept: application/json
+
+### Create recipe
+POST {{host}}/api/recipes
+Content-Type: application/json
+
+{
+  "name": "Palacsinta",
+  "description": "Egyszerű házi palacsinta",
+  "category": "Desszert",
+  "prepTimeMinutes": 25,
+  "ingredients": [
+    "20 dkg liszt",
+    "2 tojás",
+    "3 dl tej"
+  ],
+  "steps": [
+    "Keverd össze a hozzávalókat.",
+    "Pihentesd 10 percig.",
+    "Süsd ki serpenyőben."
+  ]
+}
+
+### Get by id
+GET {{host}}/api/recipes/REPLACE_WITH_ID
+Accept: application/json
+
+### Update recipe
+PUT {{host}}/api/recipes/REPLACE_WITH_ID
+Content-Type: application/json
+
+{
+  "name": "Palacsinta updated",
+  "description": "Frissített leírás",
+  "category": "Desszert",
+  "prepTimeMinutes": 30,
+  "ingredients": [
+    "20 dkg liszt",
+    "2 tojás",
+    "3 dl tej",
+    "1 csomag vaníliás cukor"
+  ],
+  "steps": [
+    "Keverd össze.",
+    "Pihentesd.",
+    "Süsd ki."
+  ]
+}
+
+### Delete recipe
+DELETE {{host}}/api/recipes/REPLACE_WITH_ID
