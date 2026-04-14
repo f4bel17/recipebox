@@ -63,8 +63,6 @@ public class RecipesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(string id, Recipe updatedRecipe)
     {
-        updatedRecipe.Id = id;
-
         var existing = await _recipesCollection
             .Find(r => r.Id == id)
             .FirstOrDefaultAsync();
@@ -74,6 +72,7 @@ public class RecipesController : ControllerBase
             return NotFound();
         }
 
+        updatedRecipe.Id = id;
         updatedRecipe.CreatedAt = existing.CreatedAt;
 
         var result = await _recipesCollection.ReplaceOneAsync(r => r.Id == id, updatedRecipe);

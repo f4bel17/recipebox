@@ -6,7 +6,7 @@ import { RouterOutlet } from '@angular/router';
   standalone: true,
   imports: [RouterOutlet],
   template: `
-    <nav class="topbar">
+    <nav class="navbar">
       <a href="/recipes">RecipeBox</a>
       <a href="/recipes/new">Új recept</a>
     </nav>

@@ -73,41 +73,22 @@ export class RecipeFormComponent implements OnInit {
 
     this.isLoading = true;
 
-    const stored = localStorage.getItem('selectedRecipe');
-    if (stored) {
-      try {
-        const recipe: Recipe = JSON.parse(stored);
-
-        if (recipe.id === this.recipeId) {
-          this.fillForm(recipe);
-          this.isLoading = false;
-          return;
-        }
-      } catch (err) {
-        console.error('Hiba a localStorage olvasásakor:', err);
-      }
-    }
-
     this.recipeService.getRecipe(this.recipeId).subscribe({
       next: (recipe: Recipe) => {
-        this.fillForm(recipe);
+        this.recipeForm.patchValue({
+          name: recipe.name,
+          description: recipe.description,
+          category: recipe.category,
+          prepTimeMinutes: recipe.prepTimeMinutes,
+          ingredientsText: recipe.ingredients.join('\n'),
+          stepsText: recipe.steps.join('\n')
+        });
         this.isLoading = false;
       },
       error: (err: unknown) => {
         console.error('Hiba a recept betöltésekor:', err);
         this.isLoading = false;
       }
-    });
-  }
-
-  private fillForm(recipe: Recipe): void {
-    this.recipeForm.patchValue({
-      name: recipe.name,
-      description: recipe.description,
-      category: recipe.category,
-      prepTimeMinutes: recipe.prepTimeMinutes,
-      ingredientsText: recipe.ingredients.join('\n'),
-      stepsText: recipe.steps.join('\n')
     });
   }
 
@@ -138,7 +119,6 @@ export class RecipeFormComponent implements OnInit {
     if (this.recipeId) {
       this.recipeService.updateRecipe(this.recipeId, payload).subscribe({
         next: () => {
-          localStorage.removeItem('selectedRecipe');
           window.location.href = '/recipes';
         },
         error: (err: unknown) => {
@@ -148,7 +128,6 @@ export class RecipeFormComponent implements OnInit {
     } else {
       this.recipeService.createRecipe(payload).subscribe({
         next: () => {
-          localStorage.removeItem('selectedRecipe');
           window.location.href = '/recipes';
         },
         error: (err: unknown) => {

@@ -29,17 +29,9 @@ import { Recipe } from '../../models/recipe.model';
       </p>
 
       <div class="button-row">
-        <button class="button-link primary" type="button" (click)="openDetails(recipe)">
-          Részletek
-        </button>
-
-        <button class="button-link secondary" type="button" (click)="openEdit(recipe)">
-          Szerkesztés
-        </button>
-
-        <button class="warn" type="button" (click)="deleteRecipe(recipe.id)">
-          Törlés
-        </button>
+        <a class="button-link primary" [href]="'/recipes/' + recipe.id">Részletek</a>
+        <a class="button-link secondary" [href]="'/recipes/' + recipe.id + '/edit'">Szerkesztés</a>
+        <button class="warn" type="button" (click)="deleteRecipe(recipe.id)">Törlés</button>
       </div>
     </div>
 
@@ -84,16 +76,6 @@ export class RecipeListComponent implements OnInit {
     });
   }
 
-  openDetails(recipe: Recipe): void {
-    localStorage.setItem('selectedRecipe', JSON.stringify(recipe));
-    window.location.href = `/recipes/${recipe.id}`;
-  }
-
-  openEdit(recipe: Recipe): void {
-    localStorage.setItem('selectedRecipe', JSON.stringify(recipe));
-    window.location.href = `/recipes/${recipe.id}/edit`;
-  }
-
   nextPage(): void {
     this.page++;
     this.loadRecipes();
@@ -107,19 +89,14 @@ export class RecipeListComponent implements OnInit {
   }
 
   deleteRecipe(id?: string): void {
-    if (!id) {
-      return;
-    }
+    if (!id) return;
 
     if (!confirm('Biztosan törlöd a receptet?')) {
       return;
     }
 
     this.recipeService.deleteRecipe(id).subscribe({
-      next: () => {
-        localStorage.removeItem('selectedRecipe');
-        this.loadRecipes();
-      },
+      next: () => this.loadRecipes(),
       error: (err: unknown) => {
         console.error('Hiba törléskor:', err);
       }
