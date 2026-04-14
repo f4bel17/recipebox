@@ -30,15 +30,31 @@ export class RecipeService {
     return this.http.get<Recipe>(`${this.apiUrl}/${id}`);
   }
 
+  getRecipe(id: string): Observable<Recipe> {
+    return this.getById(id);
+  }
+
   create(recipe: Recipe): Observable<Recipe> {
     return this.http.post<Recipe>(this.apiUrl, recipe);
+  }
+
+  createRecipe(recipe: Recipe): Observable<Recipe> {
+    return this.create(recipe);
   }
 
   update(id: string, recipe: Recipe): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/${id}`, recipe);
   }
 
+  updateRecipe(id: string, recipe: Recipe): Observable<void> {
+    return this.update(id, recipe);
+  }
+
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  deleteRecipe(id: string): Observable<void> {
+    return this.delete(id);
   }
 }

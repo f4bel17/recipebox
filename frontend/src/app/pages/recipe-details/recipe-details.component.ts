@@ -9,7 +9,18 @@ import { Recipe } from '../../models/recipe.model';
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="card" *ngIf="recipe">
+    <div class="card" *ngIf="isLoading">
+      <p>Betöltés...</p>
+    </div>
+
+    <div class="card" *ngIf="!isLoading && !recipe">
+      <p>A recept nem található.</p>
+      <div class="button-row">
+        <a class="button-link secondary" routerLink="/recipes">Vissza</a>
+      </div>
+    </div>
+
+    <div class="card" *ngIf="!isLoading && recipe">
       <h1>{{ recipe.name }}</h1>
       <p>{{ recipe.description }}</p>
       <p><strong>Kategória:</strong> {{ recipe.category }}</p>
@@ -37,11 +48,31 @@ export class RecipeDetailsComponent implements OnInit {
   private recipeService = inject(RecipeService);
 
   recipe?: Recipe;
+  isLoading = true;
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.recipeService.getById(id).subscribe((recipe: Recipe) => this.recipe = recipe);
-    }
+    this.route.paramMap.subscribe({
+      next: (params) => {
+        const id = params.get('id');
+        if (!id) {
+          this.recipe = undefined;
+          this.isLoading = false;
+          return;
+        }
+
+        this.isLoading = true;
+        this.recipeService.getRecipe(id).subscribe({
+          next: (recipe: Recipe) => {
+            this.recipe = recipe;
+            this.isLoading = false;
+          },
+          error: (err: unknown) => {
+            console.error('Hiba a recept betöltésekor:', err);
+            this.recipe = undefined;
+            this.isLoading = false;
+          }
+        });
+      }
+    });
   }
 }

@@ -17,20 +17,34 @@ import { Recipe } from '../../models/recipe.model';
       </div>
     </div>
 
+    <div class="card" *ngIf="recipes.length === 0">
+      <p>Még nincs recept.</p>
+    </div>
+
     <div class="card" *ngFor="let recipe of recipes">
       <h3>{{ recipe.name }}</h3>
       <p>{{ recipe.description }}</p>
-      <p class="list-meta">Kategória: {{ recipe.category }} | Idő: {{ recipe.prepTimeMinutes }} perc</p>
+      <p class="list-meta">
+        Kategória: {{ recipe.category }} | Idő: {{ recipe.prepTimeMinutes }} perc
+      </p>
       <div class="button-row">
         <a class="button-link primary" [routerLink]="['/recipes', recipe.id]">Részletek</a>
         <a class="button-link secondary" [routerLink]="['/recipes', recipe.id, 'edit']">Szerkesztés</a>
-        <button class="warn" (click)="deleteRecipe(recipe.id!)">Törlés</button>
+        <button class="warn" type="button" (click)="deleteRecipe(recipe.id)">Törlés</button>
       </div>
     </div>
 
     <div class="card button-row">
-      <button class="secondary" (click)="previousPage()" [disabled]="page === 1">Előző</button>
-      <button class="secondary" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Következő</button>
+      <button class="secondary" type="button" (click)="previousPage()" [disabled]="page === 1">
+        Előző
+      </button>
+      <button
+        class="secondary"
+        type="button"
+        (click)="nextPage()"
+        [disabled]="page * pageSize >= totalCount">
+        Következő
+      </button>
     </div>
   `
 })
@@ -47,11 +61,16 @@ export class RecipeListComponent implements OnInit {
   }
 
   loadRecipes(): void {
-    this.recipeService.getRecipes(this.page, this.pageSize).subscribe(result => {
-      this.recipes = result.items;
-      this.page = result.page;
-      this.pageSize = result.pageSize;
-      this.totalCount = result.totalCount;
+    this.recipeService.getRecipes(this.page, this.pageSize).subscribe({
+      next: (result) => {
+        this.recipes = result.items;
+        this.page = result.page;
+        this.pageSize = result.pageSize;
+        this.totalCount = result.totalCount;
+      },
+      error: (err) => {
+        console.error('Hiba a receptek betöltésekor:', err);
+      }
     });
   }
 
@@ -67,11 +86,18 @@ export class RecipeListComponent implements OnInit {
     }
   }
 
-  deleteRecipe(id: string): void {
+  deleteRecipe(id?: string): void {
+    if (!id) {
+      return;
+    }
+
     if (!confirm('Biztosan törlöd a receptet?')) {
       return;
     }
 
-    this.recipeService.delete(id).subscribe(() => this.loadRecipes());
+    this.recipeService.deleteRecipe(id).subscribe({
+      next: () => this.loadRecipes(),
+      error: (err: unknown) => console.error('Hiba törléskor:', err)
+    });
   }
 }
