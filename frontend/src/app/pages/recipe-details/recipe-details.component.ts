@@ -1,13 +1,13 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { RecipeService } from '../../services/recipe.service';
 import { Recipe } from '../../models/recipe.model';
 
 @Component({
   selector: 'app-recipe-details',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   template: `
     <div class="card" *ngIf="isLoading">
       <p>Betöltés...</p>
@@ -16,7 +16,7 @@ import { Recipe } from '../../models/recipe.model';
     <div class="card" *ngIf="!isLoading && !recipe">
       <p>A recept nem található.</p>
       <div class="button-row">
-        <a class="button-link secondary" routerLink="/recipes">Vissza</a>
+        <a class="button-link secondary" href="/recipes">Vissza</a>
       </div>
     </div>
 
@@ -37,8 +37,8 @@ import { Recipe } from '../../models/recipe.model';
       </ol>
 
       <div class="button-row">
-        <a class="button-link secondary" routerLink="/recipes">Vissza</a>
-        <a class="button-link primary" [routerLink]="['/recipes', recipe.id, 'edit']">Szerkesztés</a>
+        <a class="button-link secondary" href="/recipes">Vissza</a>
+        <a class="button-link primary" [href]="'/recipes/' + recipe.id + '/edit'">Szerkesztés</a>
       </div>
     </div>
   `
@@ -54,6 +54,7 @@ export class RecipeDetailsComponent implements OnInit {
     this.route.paramMap.subscribe({
       next: (params) => {
         const id = params.get('id');
+
         if (!id) {
           this.recipe = undefined;
           this.isLoading = false;
@@ -61,9 +62,10 @@ export class RecipeDetailsComponent implements OnInit {
         }
 
         this.isLoading = true;
-        this.recipeService.getRecipe(id).subscribe({
-          next: (recipe: Recipe) => {
-            this.recipe = recipe;
+
+        this.recipeService.getRecipes(1, 50).subscribe({
+          next: (result) => {
+            this.recipe = result.items.find(r => r.id === id);
             this.isLoading = false;
           },
           error: (err: unknown) => {

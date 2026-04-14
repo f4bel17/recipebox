@@ -1,19 +1,18 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { RecipeService } from '../../services/recipe.service';
 import { Recipe } from '../../models/recipe.model';
 
 @Component({
   selector: 'app-recipe-list',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   template: `
     <div class="card">
       <h1>Receptek</h1>
       <p class="list-meta">Oldal: {{ page }} | Összes recept: {{ totalCount }}</p>
       <div class="button-row">
-        <a class="button-link primary" routerLink="/recipes/new">Új recept</a>
+        <a class="button-link primary" href="/recipes/new">Új recept</a>
       </div>
     </div>
 
@@ -27,9 +26,10 @@ import { Recipe } from '../../models/recipe.model';
       <p class="list-meta">
         Kategória: {{ recipe.category }} | Idő: {{ recipe.prepTimeMinutes }} perc
       </p>
+
       <div class="button-row">
-        <a class="button-link primary" [routerLink]="['/recipes', recipe.id]">Részletek</a>
-        <a class="button-link secondary" [routerLink]="['/recipes', recipe.id, 'edit']">Szerkesztés</a>
+        <a class="button-link primary" [href]="'/recipes/' + recipe.id">Részletek</a>
+        <a class="button-link secondary" [href]="'/recipes/' + recipe.id + '/edit'">Szerkesztés</a>
         <button class="warn" type="button" (click)="deleteRecipe(recipe.id)">Törlés</button>
       </div>
     </div>
@@ -38,6 +38,7 @@ import { Recipe } from '../../models/recipe.model';
       <button class="secondary" type="button" (click)="previousPage()" [disabled]="page === 1">
         Előző
       </button>
+
       <button
         class="secondary"
         type="button"
@@ -68,7 +69,7 @@ export class RecipeListComponent implements OnInit {
         this.pageSize = result.pageSize;
         this.totalCount = result.totalCount;
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error('Hiba a receptek betöltésekor:', err);
       }
     });
@@ -87,9 +88,7 @@ export class RecipeListComponent implements OnInit {
   }
 
   deleteRecipe(id?: string): void {
-    if (!id) {
-      return;
-    }
+    if (!id) return;
 
     if (!confirm('Biztosan törlöd a receptet?')) {
       return;

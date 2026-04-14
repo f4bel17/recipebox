@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RecipeService } from '../../services/recipe.service';
 import { Recipe } from '../../models/recipe.model';
 
@@ -38,7 +38,7 @@ import { Recipe } from '../../models/recipe.model';
 
         <div class="button-row">
           <button class="primary" type="submit" [disabled]="recipeForm.invalid">Mentés</button>
-          <a class="button-link secondary" routerLink="/recipes">Mégse</a>
+          <a class="button-link secondary" href="/recipes">Mégse</a>
         </div>
       </form>
     </div>
@@ -48,7 +48,6 @@ export class RecipeFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private recipeService = inject(RecipeService);
   private route = inject(ActivatedRoute);
-  private router = inject(Router);
 
   recipeId: string | null = null;
   isEditMode = false;
@@ -75,8 +74,16 @@ export class RecipeFormComponent implements OnInit {
         }
 
         this.isLoading = true;
-        this.recipeService.getRecipe(this.recipeId).subscribe({
-          next: (recipe: Recipe) => {
+
+        this.recipeService.getRecipes(1, 50).subscribe({
+          next: (result) => {
+            const recipe = result.items.find(r => r.id === this.recipeId);
+
+            if (!recipe) {
+              this.isLoading = false;
+              return;
+            }
+
             this.recipeForm.patchValue({
               name: recipe.name,
               description: recipe.description,
@@ -85,6 +92,7 @@ export class RecipeFormComponent implements OnInit {
               ingredientsText: recipe.ingredients.join('\n'),
               stepsText: recipe.steps.join('\n')
             });
+
             this.isLoading = false;
           },
           error: (err: unknown) => {
@@ -105,6 +113,7 @@ export class RecipeFormComponent implements OnInit {
     const formValue = this.recipeForm.getRawValue();
 
     const payload: Recipe = {
+      id: this.recipeId ?? '',
       name: formValue.name ?? '',
       description: formValue.description ?? '',
       category: formValue.category ?? '',
@@ -119,16 +128,20 @@ export class RecipeFormComponent implements OnInit {
         .filter(Boolean)
     };
 
- if (this.recipeId) {
-  this.recipeService.updateRecipe(this.recipeId, payload).subscribe({
-    next: () => this.router.navigate(['/recipes']),
-    error: (err: unknown) => console.error('Hiba mentéskor:', err)
-  });
-} else {
-  this.recipeService.createRecipe(payload).subscribe({
-    next: () => this.router.navigate(['/recipes']),
-    error: (err: unknown) => console.error('Hiba létrehozáskor:', err)
-  });
-}
+    if (this.recipeId) {
+      this.recipeService.updateRecipe(this.recipeId, payload).subscribe({
+        next: () => {
+          window.location.href = '/recipes';
+        },
+        error: (err: unknown) => console.error('Hiba mentéskor:', err)
+      });
+    } else {
+      this.recipeService.createRecipe(payload).subscribe({
+        next: () => {
+          window.location.href = '/recipes';
+        },
+        error: (err: unknown) => console.error('Hiba létrehozáskor:', err)
+      });
+    }
   }
 }
