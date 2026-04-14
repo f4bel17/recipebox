@@ -72,6 +72,6 @@ export class RecipeListComponent implements OnInit {
       return;
     }
 
-    this.recipeService.deleteRecipe(id).subscribe(() => this.loadRecipes());
+    this.recipeService.delete(id).subscribe(() => this.loadRecipes());
   }
 }
