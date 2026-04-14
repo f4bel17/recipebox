@@ -11,6 +11,7 @@ import { Recipe } from '../../models/recipe.model';
     <div class="card">
       <h1>Receptek</h1>
       <p class="list-meta">Oldal: {{ page }} | Összes recept: {{ totalCount }}</p>
+
       <div class="button-row">
         <a class="button-link primary" href="/recipes/new">Új recept</a>
       </div>
@@ -77,7 +78,9 @@ export class RecipeListComponent implements OnInit {
         this.pageSize = result.pageSize;
         this.totalCount = result.totalCount;
       },
-      error: (err: unknown) => console.error('Hiba a receptek betöltésekor:', err)
+      error: (err: unknown) => {
+        console.error('Hiba a receptek betöltésekor:', err);
+      }
     });
   }
 
@@ -104,15 +107,22 @@ export class RecipeListComponent implements OnInit {
   }
 
   deleteRecipe(id?: string): void {
-    if (!id) return;
+    if (!id) {
+      return;
+    }
 
     if (!confirm('Biztosan törlöd a receptet?')) {
       return;
     }
 
     this.recipeService.deleteRecipe(id).subscribe({
-      next: () => this.loadRecipes(),
-      error: (err: unknown) => console.error('Hiba törléskor:', err)
+      next: () => {
+        localStorage.removeItem('selectedRecipe');
+        this.loadRecipes();
+      },
+      error: (err: unknown) => {
+        console.error('Hiba törléskor:', err);
+      }
     });
   }
 }

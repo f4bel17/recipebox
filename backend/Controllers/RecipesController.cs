@@ -15,7 +15,6 @@ public class RecipesController : ControllerBase
         _recipesCollection = database.GetCollection<Recipe>("recipes");
     }
 
-    // GET: api/recipes?page=1&pageSize=10
     [HttpGet]
     public async Task<ActionResult<object>> GetAll(int page = 1, int pageSize = 10)
     {
@@ -23,6 +22,7 @@ public class RecipesController : ControllerBase
 
         var items = await _recipesCollection
             .Find(_ => true)
+            .SortByDescending(r => r.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Limit(pageSize)
             .ToListAsync();
@@ -36,7 +36,6 @@ public class RecipesController : ControllerBase
         });
     }
 
-    // GET: api/recipes/{id}
     [HttpGet("{id}")]
     public async Task<ActionResult<Recipe>> GetById(string id)
     {
@@ -52,23 +51,32 @@ public class RecipesController : ControllerBase
         return Ok(recipe);
     }
 
-    // POST: api/recipes
     [HttpPost]
     public async Task<ActionResult<Recipe>> Create(Recipe recipe)
     {
+        recipe.CreatedAt = DateTime.UtcNow;
         await _recipesCollection.InsertOneAsync(recipe);
 
         return CreatedAtAction(nameof(GetById), new { id = recipe.Id }, recipe);
     }
 
-    // PUT: api/recipes/{id}
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(string id, Recipe updatedRecipe)
     {
         updatedRecipe.Id = id;
 
-        var result = await _recipesCollection
-            .ReplaceOneAsync(r => r.Id == id, updatedRecipe);
+        var existing = await _recipesCollection
+            .Find(r => r.Id == id)
+            .FirstOrDefaultAsync();
+
+        if (existing == null)
+        {
+            return NotFound();
+        }
+
+        updatedRecipe.CreatedAt = existing.CreatedAt;
+
+        var result = await _recipesCollection.ReplaceOneAsync(r => r.Id == id, updatedRecipe);
 
         if (result.MatchedCount == 0)
         {
@@ -78,12 +86,10 @@ public class RecipesController : ControllerBase
         return NoContent();
     }
 
-    // DELETE: api/recipes/{id}
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        var result = await _recipesCollection
-            .DeleteOneAsync(r => r.Id == id);
+        var result = await _recipesCollection.DeleteOneAsync(r => r.Id == id);
 
         if (result.DeletedCount == 0)
         {
