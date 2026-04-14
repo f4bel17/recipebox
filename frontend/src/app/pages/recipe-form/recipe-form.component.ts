@@ -120,15 +120,21 @@ export class RecipeFormComponent implements OnInit {
     };
 
     if (this.recipeId) {
-      this.recipeService.updateRecipe(this.recipeId, payload).subscribe({
-        next: () => this.router.navigateByUrl('/recipes'),
-        error: (err) => console.error('Hiba mentéskor:', err)
-      });
-    } else {
-      this.recipeService.createRecipe(payload).subscribe({
-        next: () => this.router.navigateByUrl('/recipes'),
-        error: (err) => console.error('Hiba létrehozáskor:', err)
-      });
-    }
+  this.recipeService.updateRecipe(this.recipeId, payload).subscribe({
+    next: () => this.router.navigate(['/recipes'], {
+      replaceUrl: true,
+      onSameUrlNavigation: 'reload'
+    }),
+    error: (err: unknown) => console.error('Hiba mentéskor:', err)
+  });
+} else {
+  this.recipeService.createRecipe(payload).subscribe({
+    next: () => this.router.navigate(['/recipes'], {
+      replaceUrl: true,
+      onSameUrlNavigation: 'reload'
+    }),
+    error: (err: unknown) => console.error('Hiba létrehozáskor:', err)
+  });
+}
   }
 }
