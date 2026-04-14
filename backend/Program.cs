@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Options;
-using RecipeBox.Api.Services;
+using MongoDB.Driver;
 using RecipeBox.Api.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,10 +7,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<MongoDbSettings>(
     builder.Configuration.GetSection("MongoDbSettings"));
 
-builder.Services.AddSingleton(sp =>
-    sp.GetRequiredService<IOptions<MongoDbSettings>>().Value);
+builder.Services.AddSingleton<IMongoClient>(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<MongoDbSettings>>().Value;
+    return new MongoClient(settings.ConnectionString);
+});
 
-builder.Services.AddSingleton<RecipeService>();
+builder.Services.AddSingleton<IMongoDatabase>(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<MongoDbSettings>>().Value;
+    var client = sp.GetRequiredService<IMongoClient>();
+    return client.GetDatabase(settings.DatabaseName);
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -19,9 +28,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("frontend", policy =>
     {
-        policy.AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowAnyOrigin();
+        policy
+            .AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
@@ -31,6 +41,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseCors("frontend");
+
 app.UseAuthorization();
 app.MapControllers();
 
