@@ -93,47 +93,52 @@ export class RecipeFormComponent implements OnInit {
   }
 
   save(): void {
-    if (this.recipeForm.invalid) {
-      this.recipeForm.markAllAsTouched();
-      return;
-    }
-
-    const formValue = this.recipeForm.getRawValue();
-
-    const payload: Recipe = {
-      id: this.recipeId ?? '',
-      name: formValue.name ?? '',
-      description: formValue.description ?? '',
-      category: formValue.category ?? '',
-      prepTimeMinutes: Number(formValue.prepTimeMinutes ?? 0),
-      ingredients: (formValue.ingredientsText ?? '')
-        .split('\n')
-        .map(x => x.trim())
-        .filter(Boolean),
-      steps: (formValue.stepsText ?? '')
-        .split('\n')
-        .map(x => x.trim())
-        .filter(Boolean)
-    };
-
-    if (this.recipeId) {
-      this.recipeService.updateRecipe(this.recipeId, payload).subscribe({
-        next: () => {
-          window.location.href = '/recipes';
-        },
-        error: (err: unknown) => {
-          console.error('Hiba mentéskor:', err);
-        }
-      });
-    } else {
-      this.recipeService.createRecipe(payload).subscribe({
-        next: () => {
-          window.location.href = '/recipes';
-        },
-        error: (err: unknown) => {
-          console.error('Hiba létrehozáskor:', err);
-        }
-      });
-    }
+  if (this.recipeForm.invalid) {
+    this.recipeForm.markAllAsTouched();
+    console.log('Form invalid');
+    return;
   }
+
+  const formValue = this.recipeForm.getRawValue();
+
+  const payload: Recipe = {
+    id: this.recipeId ?? '',
+    name: formValue.name ?? '',
+    description: formValue.description ?? '',
+    category: formValue.category ?? '',
+    prepTimeMinutes: Number(formValue.prepTimeMinutes ?? 0),
+    ingredients: (formValue.ingredientsText ?? '')
+      .split('\n')
+      .map(x => x.trim())
+      .filter(Boolean),
+    steps: (formValue.stepsText ?? '')
+      .split('\n')
+      .map(x => x.trim())
+      .filter(Boolean)
+  };
+
+  console.log('Saving payload:', payload);
+
+  if (this.recipeId) {
+    this.recipeService.updateRecipe(this.recipeId, payload).subscribe({
+      next: () => {
+        console.log('Update success');
+        window.location.href = '/recipes';
+      },
+      error: (err: unknown) => {
+        console.error('Hiba mentéskor:', err);
+      }
+    });
+  } else {
+    this.recipeService.createRecipe(payload).subscribe({
+      next: (created) => {
+        console.log('Create success:', created);
+        window.location.href = '/recipes';
+      },
+      error: (err: unknown) => {
+        console.error('Hiba létrehozáskor:', err);
+      }
+    });
+  }
+}
 }
