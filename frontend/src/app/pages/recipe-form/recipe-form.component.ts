@@ -1,14 +1,14 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { RecipeService } from '../../services/recipe.service';
 import { Recipe } from '../../models/recipe.model';
 
 @Component({
   selector: 'app-recipe-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div class="card">
       <h1>{{ isEditMode ? 'Recept szerkesztése' : 'Új recept' }}</h1>
@@ -75,15 +75,8 @@ export class RecipeFormComponent implements OnInit {
 
         this.isLoading = true;
 
-        this.recipeService.getRecipes(1, 50).subscribe({
-          next: (result) => {
-            const recipe = result.items.find(r => r.id === this.recipeId);
-
-            if (!recipe) {
-              this.isLoading = false;
-              return;
-            }
-
+        this.recipeService.getRecipe(this.recipeId).subscribe({
+          next: (recipe: Recipe) => {
             this.recipeForm.patchValue({
               name: recipe.name,
               description: recipe.description,
@@ -92,7 +85,6 @@ export class RecipeFormComponent implements OnInit {
               ingredientsText: recipe.ingredients.join('\n'),
               stepsText: recipe.steps.join('\n')
             });
-
             this.isLoading = false;
           },
           error: (err: unknown) => {
@@ -118,28 +110,18 @@ export class RecipeFormComponent implements OnInit {
       description: formValue.description ?? '',
       category: formValue.category ?? '',
       prepTimeMinutes: Number(formValue.prepTimeMinutes ?? 0),
-      ingredients: (formValue.ingredientsText ?? '')
-        .split('\n')
-        .map(x => x.trim())
-        .filter(Boolean),
-      steps: (formValue.stepsText ?? '')
-        .split('\n')
-        .map(x => x.trim())
-        .filter(Boolean)
+      ingredients: (formValue.ingredientsText ?? '').split('\n').map(x => x.trim()).filter(Boolean),
+      steps: (formValue.stepsText ?? '').split('\n').map(x => x.trim()).filter(Boolean)
     };
 
     if (this.recipeId) {
       this.recipeService.updateRecipe(this.recipeId, payload).subscribe({
-        next: () => {
-          window.location.href = '/recipes';
-        },
+        next: () => { window.location.href = '/recipes'; },
         error: (err: unknown) => console.error('Hiba mentéskor:', err)
       });
     } else {
       this.recipeService.createRecipe(payload).subscribe({
-        next: () => {
-          window.location.href = '/recipes';
-        },
+        next: () => { window.location.href = '/recipes'; },
         error: (err: unknown) => console.error('Hiba létrehozáskor:', err)
       });
     }

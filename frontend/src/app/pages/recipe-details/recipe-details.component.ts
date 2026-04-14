@@ -63,9 +63,9 @@ export class RecipeDetailsComponent implements OnInit {
 
         this.isLoading = true;
 
-        this.recipeService.getRecipes(1, 50).subscribe({
-          next: (result) => {
-            this.recipe = result.items.find(r => r.id === id);
+        this.recipeService.getRecipe(id).subscribe({
+          next: (recipe: Recipe) => {
+            this.recipe = recipe;
             this.isLoading = false;
           },
           error: (err: unknown) => {
