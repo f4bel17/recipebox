@@ -1,13 +1,13 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { RecipeService } from '../../services/recipe.service';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Recipe } from '../../models/recipe.model';
 
 @Component({
   selector: 'app-recipe-details',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HttpClientModule],
   template: `
     <div class="card" *ngIf="isLoading">
       <p>Betöltés...</p>
@@ -23,6 +23,7 @@ import { Recipe } from '../../models/recipe.model';
     <div class="card" *ngIf="!isLoading && recipe">
       <h1>{{ recipe.name }}</h1>
       <p>{{ recipe.description }}</p>
+
       <p><strong>Kategória:</strong> {{ recipe.category }}</p>
       <p><strong>Elkészítési idő:</strong> {{ recipe.prepTimeMinutes }} perc</p>
 
@@ -45,7 +46,8 @@ import { Recipe } from '../../models/recipe.model';
 })
 export class RecipeDetailsComponent implements OnInit {
   private route = inject(ActivatedRoute);
-  private recipeService = inject(RecipeService);
+  private http = inject(HttpClient);
+  private cdr = inject(ChangeDetectorRef);
 
   recipe?: Recipe;
   isLoading = true;
@@ -55,28 +57,24 @@ export class RecipeDetailsComponent implements OnInit {
 
     if (!id) {
       this.isLoading = false;
+      this.cdr.detectChanges();
       return;
     }
 
-    const stored = localStorage.getItem('selectedRecipe');
-    if (stored) {
-      const parsed: Recipe = JSON.parse(stored);
-      if (parsed.id === id) {
-        this.recipe = parsed;
-        this.isLoading = false;
-        return;
-      }
-    }
-
-    this.recipeService.getRecipe(id).subscribe({
-      next: (recipe: Recipe) => {
-        this.recipe = recipe;
-        this.isLoading = false;
-      },
-      error: (err: unknown) => {
-        console.error('Hiba a recept betöltésekor:', err);
-        this.isLoading = false;
-      }
-    });
+    this.http
+      .get<Recipe>(`http://localhost:8080/api/recipes/${id}`)
+      .subscribe({
+        next: (recipe) => {
+          this.recipe = recipe;
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err: unknown) => {
+          console.error('Hiba a recept betöltésekor:', err);
+          this.recipe = undefined;
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }
+      });
   }
 }

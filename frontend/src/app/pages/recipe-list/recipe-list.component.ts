@@ -1,12 +1,19 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RecipeService } from '../../services/recipe.service';
+import { HttpClient, HttpClientModule, HttpParams } from '@angular/common/http';
 import { Recipe } from '../../models/recipe.model';
+
+interface PagedRecipesResponse {
+  items: Recipe[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
 
 @Component({
   selector: 'app-recipe-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HttpClientModule],
   template: `
     <div class="card">
       <h1>Receptek</h1>
@@ -51,7 +58,8 @@ import { Recipe } from '../../models/recipe.model';
   `
 })
 export class RecipeListComponent implements OnInit {
-  private recipeService = inject(RecipeService);
+  private http = inject(HttpClient);
+  private cdr = inject(ChangeDetectorRef);
 
   recipes: Recipe[] = [];
   page = 1;
@@ -63,17 +71,27 @@ export class RecipeListComponent implements OnInit {
   }
 
   loadRecipes(): void {
-    this.recipeService.getRecipes(this.page, this.pageSize).subscribe({
-      next: (result) => {
-        this.recipes = result.items;
-        this.page = result.page;
-        this.pageSize = result.pageSize;
-        this.totalCount = result.totalCount;
-      },
-      error: (err: unknown) => {
-        console.error('Hiba a receptek betöltésekor:', err);
-      }
-    });
+    const params = new HttpParams()
+      .set('page', this.page)
+      .set('pageSize', this.pageSize);
+
+    this.http
+      .get<PagedRecipesResponse>('http://localhost:8080/api/recipes', { params })
+      .subscribe({
+        next: (result) => {
+          this.recipes = result.items ?? [];
+          this.page = result.page ?? 1;
+          this.pageSize = result.pageSize ?? 5;
+          this.totalCount = result.totalCount ?? 0;
+          this.cdr.detectChanges();
+        },
+        error: (err: unknown) => {
+          console.error('Hiba a receptek betöltésekor:', err);
+          this.recipes = [];
+          this.totalCount = 0;
+          this.cdr.detectChanges();
+        }
+      });
   }
 
   nextPage(): void {
@@ -95,11 +113,13 @@ export class RecipeListComponent implements OnInit {
       return;
     }
 
-    this.recipeService.deleteRecipe(id).subscribe({
-      next: () => this.loadRecipes(),
-      error: (err: unknown) => {
-        console.error('Hiba törléskor:', err);
-      }
-    });
+    this.http
+      .delete(`http://localhost:8080/api/recipes/${id}`)
+      .subscribe({
+        next: () => this.loadRecipes(),
+        error: (err: unknown) => {
+          console.error('Hiba törléskor:', err);
+        }
+      });
   }
 }
